@@ -1,1 +1,7 @@
 *.csv
+*.xlsx
+node_modules/
+assets/
+*.json
+*.gml
+

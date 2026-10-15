@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetSI Coauthorship Network</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #ffffff; color: #111827; font-family: system-ui, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .panel {
+      position: fixed; z-index: 10; padding: 10px 14px; border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92); border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      font-size: 13px; line-height: 1.5;
+    }
+    #info { bottom: 12px; left: 12px; max-width: 340px; pointer-events: none; }
+    #info h1 { margin: 0 0 4px; font-size: 15px; }
+    #legend { top: 12px; left: 12px; display: flex; flex-direction: column; gap: 2px; padding: 6px; }
+    .legend-header { padding: 2px 8px 4px; }
+    .legend-title { font-weight: 600; font-size: 14px; }
+    .legend-subtitle { color: #6b7280; font-size: 12px; }
+    #legend button {
+      display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 1px solid transparent; border-radius: 6px;
+      background: none; font: inherit; color: inherit; cursor: pointer; text-align: left;
+    }
+    #legend button:hover { background: #f3f4f6; }
+    #legend button.active { border-color: #9ca3af; font-weight: 600; }
+    #legend button.dimmed { opacity: 0.4; }
+    #search-box { top: 12px; right: 72px; width: 300px; padding: 8px; }
+    #search {
+      box-sizing: border-box; width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font: inherit;
+    }
+    #search:focus { outline: 2px solid #4dabf7; outline-offset: -1px; }
+    #search-count { color: #6b7280; padding: 4px 2px 0; }
+    #search-count:empty { display: none; }
+    #tooltip { bottom: 12px; right: 12px; width: 360px; max-height: 45vh; display: flex; flex-direction: column; line-height: 1.4; }
+    #tooltip[hidden] { display: none; }
+    #tooltip .name { font-weight: 600; font-size: 15px; }
+    #tooltip .count { color: #6b7280; margin-bottom: 6px; }
+    #tooltip ul { margin: 0; padding-left: 18px; overflow-y: auto; }
+    #tooltip li { margin-bottom: 4px; }
+    .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  </style>
+  <!-- helios-web imports the bare specifier 'helios-network'; map both to the local npm install. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "helios-network": "./node_modules/helios-network/dist/helios-network.js",
+        "helios-web": "./node_modules/helios-web/dist/helios-web.es.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="legend" class="panel" aria-label="Filter by author type">
+    <div class="legend-header">
+      <div class="legend-title">Legend</div>
+      <div class="legend-subtitle">click to focus</div>
+    </div>
+    <button type="button" data-filter="linked"><span class="swatch" style="background:#4dabf7"></span>Linked authors</button>
+    <button type="button" data-filter="isolated"><span class="swatch" style="background:#ff922b"></span>Isolated authors</button>
+  </div>
+  <div id="search-box" class="panel">
+    <input id="search" type="search" placeholder="Search author or publication title" aria-label="Search author or publication title">
+    <div id="search-count"></div>
+  </div>
+  <div id="info" class="panel">
+    <h1>Northeastern Network Science Institute</h1>
+    <div id="stats">Loading network…</div>
+    <div>Hover a node to see the author and their publications. Click a node to focus and orbit around it; click the background to release.</div>
+  </div>
+  <div id="tooltip" class="panel" hidden>
+    <div class="name"></div>
+    <div class="count"></div>
+    <ul></ul>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
