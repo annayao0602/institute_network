@@ -14,6 +14,7 @@
     }
     #info { bottom: 12px; left: 12px; max-width: 340px; pointer-events: none; }
     #info h1 { margin: 0 0 4px; font-size: 15px; }
+    #info ul { margin: 6px 0 0; padding-left: 18px; color: #4b5563; }
     #legend { top: 12px; left: 12px; display: flex; flex-direction: column; gap: 2px; padding: 6px; }
     .legend-header { padding: 2px 8px 4px; }
     .legend-title { font-weight: 600; font-size: 14px; }
@@ -25,13 +26,34 @@
     #legend button:hover { background: #f3f4f6; }
     #legend button.active { border-color: #9ca3af; font-weight: 600; }
     #legend button.dimmed { opacity: 0.4; }
-    #search-box { top: 12px; right: 72px; width: 300px; padding: 8px; }
+    #search-box { top: 12px; right: 72px; width: 380px; padding: 8px; }
+    .search-row { display: flex; gap: 6px; }
     #search {
-      box-sizing: border-box; width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font: inherit;
+      box-sizing: border-box; flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font: inherit;
     }
     #search:focus { outline: 2px solid #4dabf7; outline-offset: -1px; }
+    /* The Clear search button replaces the browser's built-in "x". */
+    #search::-webkit-search-cancel-button { display: none; }
+    #clear-search {
+      flex: none; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb;
+      font: inherit; color: #111827; cursor: pointer;
+    }
+    #clear-search:hover:not(:disabled) { background: #f3f4f6; }
+    #clear-search:disabled { color: #9ca3af; cursor: default; }
     #search-count { color: #6b7280; padding: 4px 2px 0; }
     #search-count:empty { display: none; }
+    #search-results {
+      list-style: none; margin: 6px 0 0; padding: 4px 0 0; max-height: 50vh; overflow-y: auto; border-top: 1px solid #e5e7eb;
+    }
+    #search-results[hidden] { display: none; }
+    #search-results li[data-index] {
+      display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+    }
+    #search-results li[data-index] .swatch { margin-top: 5px; }
+    #search-results li[data-index]:hover, #search-results li.active { background: #eff6ff; }
+    .result-name { font-weight: 600; }
+    .result-detail { color: #6b7280; font-size: 12px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .result-empty { padding: 6px 8px; color: #6b7280; }
     #tooltip { bottom: 12px; right: 12px; width: 360px; max-height: 45vh; display: flex; flex-direction: column; line-height: 1.4; }
     #tooltip[hidden] { display: none; }
     #tooltip .name { font-weight: 600; font-size: 15px; }
@@ -61,13 +83,21 @@
     <button type="button" data-filter="isolated"><span class="swatch" style="background:#ff922b"></span>Isolated authors</button>
   </div>
   <div id="search-box" class="panel">
-    <input id="search" type="search" placeholder="Search author or publication title" aria-label="Search author or publication title">
+    <div class="search-row">
+      <input id="search" type="search" placeholder="Search author or publication title" aria-label="Search author or publication title">
+      <button id="clear-search" type="button" disabled>Clear search</button>
+    </div>
     <div id="search-count"></div>
+    <ul id="search-results" role="listbox" aria-label="Matching authors" hidden></ul>
   </div>
   <div id="info" class="panel">
     <h1>Northeastern Network Science Institute</h1>
     <div id="stats">Loading network…</div>
-    <div>Hover a node to see the author and their publications. Click a node to focus and orbit around it; click the background to release.</div>
+    <ul>
+      <li>Node size scaled based on number of coauthors.</li>
+      <li>Hover a node to see the author and their publications.</li>
+      <li>Click a node to focus and orbit around it; click the background to release.</li>
+    </ul>
   </div>
   <div id="tooltip" class="panel" hidden>
     <div class="name"></div>
