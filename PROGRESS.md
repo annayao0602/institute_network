@@ -244,3 +244,31 @@ Distances are fractions of the isolated ring's median radius.
   - "Hover a node to see the author and their publications."
   - "Click a node to focus and orbit around it; click the background to release."
 - Checked in headless Chrome: the three bullets render under the stats line.
+
+## 2026-10-29 (5): Ego network toggle
+
+### Changes
+- **"Ego network" toggle in the tooltip (bottom right), next to the author's name.**
+  - It's shown when the tooltip shows the selected author (clicked, or picked from search results). While another node is hovered and the tooltip shows that author instead, the button is hidden.
+  - **On** (filled blue): everything except the selected author and their coauthors is dimmed. Links between any two of them stay bright, including links among the coauthors, so the whole ego network is visible.
+  - **Off** (outlined): the dimming is removed.
+- **Uses the existing dimming.** The ego network is one more condition in `applyFilters()`, alongside the search text and the legend filter.
+  - All active conditions combine: with a search or legend filter also active, only ego-network authors that also match stay bright. The search dropdown lists only those, and the "N matching authors" count counts only those.
+  - The ego network alone shows no count.
+  - As with the other filters, dimmed nodes can't be hovered or clicked.
+- **Moving through coauthors:** with the ego network on, clicking a highlighted coauthor (or picking one from search) moves the ego network to that author, with the toggle still on.
+- **Clicking the background** releases the selection and turns the ego network off.
+- **Coauthor count in the tooltip:** the count line now reads "N publications · N coauthors" (plus "· focused" for the selected author). Coauthors are counted from the coauthor links (`coauthors` in `main.js`).
+
+### Verified (headless Chrome, WebGPU)
+- Picked István A. Kovács from search (3 coauthors in the GML).
+  - The tooltip showed "9 publications · 3 coauthors · focused" and the toggle, off.
+  - Toggled on: the "Linked authors" legend filter then matched 4 authors (Kovács + 3 coauthors), down from 117.
+  - The search dropdown for "a" listed only those 4.
+  - The screenshot shows Kovács and his coauthors bright with their links, and the rest dimmed.
+- Picked his coauthor Marc Santolini (2 coauthors): the ego network moved to him (3 authors) with the toggle still on.
+- Toggled off: back to 117.
+- Clicked the background: the selection was released, the tooltip hidden, and the dimming gone.
+
+### Note
+- Picking a search result zooms in 4×, so some of the author's coauthors can be off-screen. The camera doesn't reframe to fit the ego network.

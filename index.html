@@ -57,6 +57,14 @@
     #tooltip { bottom: 12px; right: 12px; width: 360px; max-height: 45vh; display: flex; flex-direction: column; line-height: 1.4; }
     #tooltip[hidden] { display: none; }
     #tooltip .name { font-weight: 600; font-size: 15px; }
+    .tooltip-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    #ego-toggle {
+      flex: none; padding: 3px 10px; border: 1px solid #d1d5db; border-radius: 999px; background: #f9fafb;
+      font: inherit; font-size: 12px; color: #111827; cursor: pointer;
+    }
+    #ego-toggle[hidden] { display: none; }
+    #ego-toggle:hover { background: #f3f4f6; }
+    #ego-toggle[aria-pressed="true"] { background: #4dabf7; border-color: #4dabf7; color: #ffffff; }
     #tooltip .count { color: #6b7280; margin-bottom: 6px; }
     #tooltip ul { margin: 0; padding-left: 18px; overflow-y: auto; }
     #tooltip li { margin-bottom: 4px; }
@@ -100,7 +108,11 @@
     </ul>
   </div>
   <div id="tooltip" class="panel" hidden>
-    <div class="name"></div>
+    <div class="tooltip-header">
+      <div class="name"></div>
+      <button id="ego-toggle" type="button" aria-pressed="false" hidden
+        title="Highlight this author and their coauthors">Ego network</button>
+    </div>
     <div class="count"></div>
     <ul></ul>
   </div>

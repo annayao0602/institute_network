@@ -222,6 +222,10 @@ const searchCount = document.querySelector('#search-count');
 const searchResults = document.querySelector('#search-results');
 const legendItems = [...document.querySelectorAll('#legend button')];
 let legendFilter = null; // null, 'linked' or 'isolated'
+// Ego network: when on, only the focused author and their coauthors stay bright.
+let egoActive = false;
+const coauthors = authors.map(() => new Set());
+edgeEndpoints.forEach(([a, b]) => { coauthors[a].add(b); coauthors[b].add(a); });
 const allNodes = authors.map((_, i) => i);
 const allEdges = edgeEndpoints.map((_, e) => e);
 // Dimmed nodes can't be hovered or clicked while a filter is active.
@@ -236,27 +240,27 @@ hoverBehavior.resolveHoverLabelValue = (index, net) => (dimmedNodes.has(index) ?
 
 function applyFilters() {
   const query = searchInput.value.trim().toLowerCase();
-  const filtering = query !== '' || legendFilter !== null;
+  const searching = query !== '' || legendFilter !== null;
+  const ego = egoActive && focusedNode >= 0 ? new Set([focusedNode, ...coauthors[focusedNode]]) : null;
   clearSearchButton.disabled = searchInput.value === '';
 
   helios.nodeState(allNodes, DIMMED, { mode: 'remove' });
   helios.edgeState(allEdges, DIMMED, { mode: 'remove' });
   dimmedNodes = new Set();
 
-  if (!filtering) {
-    searchCount.textContent = '';
-  } else {
+  if (searching || ego) {
     authors.forEach((author, i) => {
       const inLegend = legendFilter === null || (legendFilter === 'isolated') === author.isolated;
-      if (!inLegend || (query !== '' && !author.searchText.includes(query))) dimmedNodes.add(i);
+      if (!inLegend || (query !== '' && !author.searchText.includes(query)) || (ego && !ego.has(i))) dimmedNodes.add(i);
     });
-    // A link stays bright only when both of its authors match.
+    // A link stays bright only when both of its authors match, so the ego
+    // network keeps the links among the focused author's coauthors too.
     const dimmedEdges = allEdges.filter((e) => dimmedNodes.has(edgeEndpoints[e][0]) || dimmedNodes.has(edgeEndpoints[e][1]));
     helios.nodeState([...dimmedNodes], DIMMED, { mode: 'add' });
     helios.edgeState(dimmedEdges, DIMMED, { mode: 'add' });
-    const matchCount = authors.length - dimmedNodes.size;
-    searchCount.textContent = `${matchCount} matching author${matchCount === 1 ? '' : 's'}`;
   }
+  const matchCount = authors.length - dimmedNodes.size;
+  searchCount.textContent = searching ? `${matchCount} matching author${matchCount === 1 ? '' : 's'}` : '';
   renderResults(query);
 
   if (dimmedNodes.has(hoveredNode)) {
@@ -375,6 +379,7 @@ const tooltip = document.querySelector('#tooltip');
 const tooltipName = tooltip.querySelector('.name');
 const tooltipCount = tooltip.querySelector('.count');
 const tooltipList = tooltip.querySelector('ul');
+const egoToggle = document.querySelector('#ego-toggle');
 let hoveredNode = -1;
 let focusedNode = -1;
 
@@ -384,9 +389,15 @@ function showAuthor(index) {
     return;
   }
   const { name, titles } = authors[index];
+  const coauthorCount = coauthors[index].size;
   tooltipName.textContent = name;
   tooltipCount.textContent = `${titles.length} publication${titles.length === 1 ? '' : 's'}`
+    + ` · ${coauthorCount} coauthor${coauthorCount === 1 ? '' : 's'}`
     + (index === focusedNode ? ' · focused' : '');
+  // The ego network toggle belongs to the focused author, so it's only shown
+  // while the tooltip shows that author (not a node hovered meanwhile).
+  egoToggle.hidden = index !== focusedNode;
+  egoToggle.setAttribute('aria-pressed', String(egoActive));
   tooltipList.replaceChildren(...titles.map((title) => {
     const item = document.createElement('li');
     item.textContent = title;
@@ -419,6 +430,8 @@ function focusNode(index, { zoomIn = false } = {}) {
   const zoomScale = zoomIn && focusedNode < 0 ? 4 : 1;
   focusedNode = index;
   helios.cameraFollowNodes([index], { animate: true, durationMs: 600, zoomScale });
+  // With the ego network on, it moves to the newly focused author.
+  if (egoActive) applyFilters();
   refreshTooltip();
 }
 
@@ -429,9 +442,20 @@ helios.on(EVENTS.GRAPH_CLICK, ({ detail }) => {
     focusNode(detail.index);
   } else if (detail?.kind == null && focusedNode >= 0) {
     focusedNode = -1;
+    // Releasing the focus also turns the ego network off.
+    if (egoActive) {
+      egoActive = false;
+      applyFilters();
+    }
     helios.cameraFollowNodes([], { animate: true, durationMs: 600 });
     refreshTooltip();
   }
+});
+
+egoToggle.addEventListener('click', () => {
+  egoActive = !egoActive;
+  applyFilters();
+  refreshTooltip();
 });
 
 window.__helios = helios;
