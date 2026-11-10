@@ -1,7 +1,8 @@
-*.csv
 *.xlsx
 node_modules/
 assets/
 *.json
-*.gml
-
+institute_data/cleaned_institute_paa_8_27_25.csv
+institute_data/cleaned_subinstitute_directory_8_27_25.csv
+institute_data/missing_author_names.csv
+institute_data/missing_publication_names.csv
