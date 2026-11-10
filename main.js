@@ -5,8 +5,23 @@ import { Helios, EVENTS } from 'helios-web';
 const NETWORK_URL = './institute_data/coauthorship_network.gml';
 const TITLES_URL = './institute_data/author_publications.json';
 
-const CONNECTED_COLOR = '#4dabf7ff';
-const ISOLATED_COLOR = '#ff922bff';
+// Node color shows how many publications an author has: lighter = fewer,
+// darker = more. Blues for linked authors, oranges for isolated ones. Each
+// band's lower bound is in PUBLICATION_BANDS; the last band is open-ended.
+const PUBLICATION_BANDS = [1, 2, 4, 10, 20];
+const CONNECTED_COLORS = ['#a5d8ff', '#74c0fc', '#339af0', '#1971c2', '#0b4a8f'];
+const ISOLATED_COLORS = ['#ffd8a8', '#ffa94d', '#fd7e14', '#d9480f', '#9c3209'];
+// The legend's labels for the bands, e.g. "2–3" and "20+".
+const BAND_LABELS = PUBLICATION_BANDS.map((low, k) => {
+  const next = PUBLICATION_BANDS[k + 1];
+  if (next === undefined) return `${low}+`;
+  return next - 1 === low ? `${low}` : `${low}–${next - 1}`;
+});
+// Isolated authors' band ids are offset so linked and isolated get separate colors.
+const ISOLATED_BAND_OFFSET = 10;
+const COLOR_ATTRIBUTE = 'color_band';
+// Every author is drawn at the same size.
+const NODE_SIZE = 8;
 // Opacity of nodes and links that don't match the current search/legend filter.
 const DIMMED_OPACITY = 0.3;
 
@@ -20,9 +35,12 @@ const GRAVITY_LARGEST = 1;
 const GRAVITY_CONNECTED = 0.8;
 const GRAVITY_ISOLATED = 0.2;
 // Rest length of each coauthor link (Helios default 1). Longer links loosen
-// dense groups so each author and link can be told apart; much longer (~20)
-// and the groups blur into one tangle.
+// dense groups, but much longer (~20) and the groups blur into one tangle.
 const LINK_DISTANCE = 14;
+// How hard authors push each other apart (Helios default 1). Stronger repulsion
+// spreads the linked authors out and separates the coauthor groups, so the
+// links between them are easier to follow.
+const REPULSION = 5;
 // Starting positions (layout units). Isolated authors start evenly spread on a
 // sphere this far out, so the ring around the connected authors is balanced.
 const SEED_RADIUS_ISOLATED = 350;
@@ -71,6 +89,13 @@ authors.forEach((author) => { author.isolated = true; });
 edgeEndpoints.flat().forEach((i) => { authors[i].isolated = false; });
 const isolatedCount = authors.filter((a) => a.isolated).length;
 
+// Publication band (index into PUBLICATION_BANDS) and node color of each author.
+authors.forEach((author) => {
+  const count = author.titles.length;
+  author.band = Math.max(0, PUBLICATION_BANDS.findLastIndex((low) => count >= low));
+  author.color = (author.isolated ? ISOLATED_COLORS : CONNECTED_COLORS)[author.band];
+});
+
 // Connected components (union-find over the coauthor links).
 const parent = authors.map((_, i) => i);
 const findRoot = (i) => (parent[i] === i ? i : (parent[i] = findRoot(parent[i])));
@@ -114,6 +139,12 @@ network.withBufferAccess(() => {
   const view = network.getNodeAttributeBuffer(SEED_ATTRIBUTE).view;
   seedPositions.forEach((p, i) => view.set(p, 3 * i));
 });
+// Band id the color mapper reads: 0–4 for linked authors, 10–14 for isolated ones.
+network.defineNodeAttribute(COLOR_ATTRIBUTE, AttributeType.Float, 1);
+network.withBufferAccess(() => {
+  const view = network.getNodeAttributeBuffer(COLOR_ATTRIBUTE).view;
+  authors.forEach((author, i) => { view[i] = author.band + (author.isolated ? ISOLATED_BAND_OFFSET : 0); });
+});
 
 const helios = new Helios(network, {
   container: document.querySelector('#app'),
@@ -130,6 +161,7 @@ const helios = new Helios(network, {
       // far off. Exact repulsion is cheap at this size.
       exactRepulsionThreshold3D: 1024,
       linkDistance: LINK_DISTANCE,
+      kRepulsion: REPULSION,
     },
   },
   // No permanent labels; the hover behavior still shows the hovered author's name.
@@ -180,23 +212,36 @@ helios.setLayoutPositionsFromNodeAttribute(SEED_ATTRIBUTE);
 const mappers = helios.behavior.mappers;
 mappers.setChannelConfig('node', 'color', {
   type: 'categorical',
-  attributes: 'isolated',
-  domain: [0, 1],
-  range: [CONNECTED_COLOR, ISOLATED_COLOR],
+  attributes: COLOR_ATTRIBUTE,
+  domain: [
+    ...CONNECTED_COLORS.map((_, k) => k),
+    ...ISOLATED_COLORS.map((_, k) => k + ISOLATED_BAND_OFFSET),
+  ],
+  range: [...CONNECTED_COLORS, ...ISOLATED_COLORS].map((hex) => `${hex}ff`),
   defaultValue: '#888888ff',
 });
-mappers.setChannelConfig('node', 'size', {
-  type: 'linear',
-  attributes: 'degree',
-  domain: [0, 40],
-  range: [6, 18],
-});
+mappers.setChannelConfig('node', 'size', { type: 'constant', value: NODE_SIZE });
 mappers.setChannelConfig('edge', 'width', {
   type: 'linear',
   attributes: 'weight',
   domain: [1, 10],
-  range: [0.5, 3],
+  range: [0.8, 3.5],
 });
+
+// Legend: a light-to-dark ramp per author type, with the publication bands below.
+const makeSwatch = (color) => {
+  const swatch = document.createElement('span');
+  swatch.className = 'ramp-swatch';
+  swatch.style.background = color;
+  return swatch;
+};
+document.querySelector('[data-filter="linked"] .ramp').replaceChildren(...CONNECTED_COLORS.map(makeSwatch));
+document.querySelector('[data-filter="isolated"] .ramp').replaceChildren(...ISOLATED_COLORS.map(makeSwatch));
+document.querySelector('#legend-bands').replaceChildren(...BAND_LABELS.map((label) => {
+  const cell = document.createElement('span');
+  cell.textContent = label;
+  return cell;
+}));
 
 helios.frameNetwork({ animate: false });
 
@@ -297,7 +342,7 @@ function renderResults(query) {
     item.setAttribute('role', 'option');
     const swatch = document.createElement('span');
     swatch.className = 'swatch';
-    swatch.style.background = author.isolated ? ISOLATED_COLOR : CONNECTED_COLOR;
+    swatch.style.background = author.color;
     const text = document.createElement('div');
     const name = document.createElement('div');
     name.className = 'result-name';

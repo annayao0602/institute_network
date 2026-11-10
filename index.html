@@ -19,10 +19,19 @@
     .legend-header { padding: 2px 8px 4px; }
     .legend-title { font-weight: 600; font-size: 14px; }
     .legend-subtitle { color: #6b7280; font-size: 12px; }
+    /* Each row: author type, then one swatch per publication band (lighter = fewer). */
+    #legend button, .legend-bands-row {
+      display: grid; grid-template-columns: 112px repeat(5, 34px); align-items: center; padding: 4px 8px;
+    }
     #legend button {
-      display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 1px solid transparent; border-radius: 6px;
+      border: 1px solid transparent; border-radius: 6px;
       background: none; font: inherit; color: inherit; cursor: pointer; text-align: left;
     }
+    #legend .ramp { display: contents; }
+    .ramp-swatch { justify-self: center; width: 28px; height: 12px; border-radius: 3px; }
+    .legend-bands-row { padding-top: 0; color: #6b7280; font-size: 12px; }
+    #legend-bands { display: contents; }
+    #legend-bands span { text-align: center; }
     #legend button:hover { background: #f3f4f6; }
     #legend button.active { border-color: #9ca3af; font-weight: 600; }
     #legend button.dimmed { opacity: 0.4; }
@@ -87,8 +96,11 @@
       <div class="legend-title">Legend</div>
       <div class="legend-subtitle">click to focus</div>
     </div>
-    <button type="button" data-filter="linked"><span class="swatch" style="background:#4dabf7"></span>Linked authors</button>
-    <button type="button" data-filter="isolated"><span class="swatch" style="background:#ff922b"></span>Isolated authors</button>
+    <button type="button" data-filter="linked"><span>Linked authors</span><span class="ramp"></span></button>
+    <button type="button" data-filter="isolated"><span>Isolated authors</span><span class="ramp"></span></button>
+    <div class="legend-bands-row" aria-label="Publications per author, lighter to darker">
+      <span>Publications</span><span id="legend-bands"></span>
+    </div>
   </div>
   <div id="search-box" class="panel">
     <div class="search-row">
@@ -102,7 +114,7 @@
     <h1>Northeastern Network Science Institute</h1>
     <div id="stats">Loading network…</div>
     <ul>
-      <li>Node size scaled based on number of coauthors.</li>
+      <li>Node color shows number of publications: darker means more.</li>
       <li>Hover a node to see the author and their publications.</li>
       <li>Click a node to focus and orbit around it; click the background to release.</li>
     </ul>
