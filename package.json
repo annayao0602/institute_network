@@ -1,0 +1,14 @@
+{
+  "name": "institute-network",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "rm -rf assets && cp -R node_modules/helios-web/dist/assets ./assets",
+    "build-network": "/opt/anaconda3/bin/python build_network.py",
+    "serve": "python3 -m http.server 8000"
+  },
+  "dependencies": {
+    "helios-network": "0.10.4",
+    "helios-web": "0.10.9"
+  }
+}
